@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WOS FC9/FC10 Upgrade Calculator with Buffs</title>
+    <style>
+        :root {
+            --bg-dark: #0a0e14;
+            --frost-blue: #A0E7FF;
+            --fire-red: #FF4D4D;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --border-ice: rgba(160, 231, 255, 0.2);
+            --card-active: rgba(255, 77, 77, 0.2);
+            --buff-gold: #FFD700;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 50% 0%, #1a2a3a 0%, transparent 50%),
+                linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)),
+                url('https://www.transparenttextures.com/patterns/ice-crystals.png');
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 650px;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+            border-bottom: 1px solid var(--border-ice);
+            padding-bottom: 15px;
+        }
+
+        header h1 {
+            color: var(--frost-blue);
+            font-size: 1.5rem;
+            margin: 0;
+            text-shadow: 0 0 10px rgba(160, 231, 255, 0.5);
+        }
+
+        /* Dashboard Styles */
+        .dashboard {
+            position: sticky;
+            top: 20px;
+            z-index: 100;
+            background: rgba(10, 14, 20, 0.95);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--fire-red);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 30px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            box-shadow: 0 10px 30px rgba(255, 77, 77, 0.15);
+        }
+
+        .stat-box {
+            text-align: center;
+            padding: 8px;
+        }
+
+        .stat-box.full-width {
+            grid-column: span 2;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            padding-top: 10px;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--frost-blue);
+            display: block;
+            margin-bottom: 3px;
+        }
+
+        .stat-value {
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+
+        .stat-value.red { color: var(--fire-red); }
+        .stat-value.gold { color: var(--buff-gold); }
+
+        /* Section Styles */
+        .section-title {
+            color: var(--frost-blue);
+            font-size: 1rem;
+            margin: 25px 0 12px;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, var(--border-ice), transparent);
+            margin-left: 15px;
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        /* Upgrade Button */
+        .upgrade-btn {
+            background: var(--glass-bg);
+            border: 1px solid var(--border-ice);
+            border-radius: 10px;
+            padding: 12px 8px;
+            color: #ddd;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .upgrade-btn.selected {
+            border-color: var(--fire-red);
+            background: var(--card-active);
+            color: #fff;
+        }
+
+        .upgrade-btn .name { font-weight: bold; font-size: 0.85rem; }
+        .upgrade-btn .info { font-size: 0.7rem; opacity: 0.7; }
+
+        /* Buff Section Styles */
+        .buff-container {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid var(--border-ice);
+        }
+
+        .buff-group {
+            margin-bottom: 15px;
+        }
+
+        .buff-group label {
+            display: block;
+            font-size: 0.85rem;
+            margin-bottom: 8px;
+            color: var(--frost-blue);
+        }
+
+        .buff-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .chip {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid transparent;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .chip.active {
+            background: var(--buff-gold);
+            color: #000;
+            font-weight: bold;
+        }
+
+        .input-custom {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid var(--border-ice);
+            border-radius: 8px;
+            color: #fff;
+            padding: 8px;
+            width: 80px;
+            outline: none;
+            margin-left: 10px;
+        }
+
+        .warning-box {
+            background: rgba(255, 77, 77, 0.1);
+            border: 1px dashed var(--fire-red);
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            color: #ff9999;
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        footer {
+            text-align: center;
+            padding: 30px 0;
+            font-size: 0.75rem;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>WHITE OUT SURVIVAL</h1>
+        <div style="font-size: 0.8rem; color: #888; margin-top: 5px;">불의 수정 업그레이드 & 가속 계산기</div>
+    </header>
+
+    <div class="dashboard">
+        <div class="stat-box">
+            <span class="stat-label">필요한 불의 수정 (FC)</span>
+            <span id="total-fc" class="stat-value red">0</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-label">정제된 불의 수정 (RFC)</span>
+            <span id="total-rfc" class="stat-value red">0</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-label">기본 건설 시간</span>
+            <span id="base-days" class="stat-value">0 일</span>
+        </div>
+        <div class="stat-box">
+            <span class="stat-label">가속 적용 후 (예상)</span>
+            <span id="final-days" class="stat-value gold">0 일</span>
+        </div>
+        <div class="stat-box full-width">
+            <span class="stat-label">현재 적용된 총 버프 보너스</span>
+            <span id="total-buff-percent" class="stat-value gold">0%</span>
+        </div>
+    </div>
+
+    <!-- 버프 섹션 -->
+    <div class="section-title">활성화된 건설 버프 선택</div>
+    <div class="buff-container">
+        <!-- VIP & 족장 & 집행관 -->
+        <div class="buff-group">
+            <label>시스템 및 직책 버프</label>
+            <div class="buff-options">
+                <div class="chip" data-type="toggle" data-val="10" id="buff-vip">👑 VIP (+10%)</div>
+                <div class="chip" data-type="toggle" data-val="20" id="buff-chief">🏠 시청 스킬 (+20%)</div>
+                <div class="chip" data-type="toggle" data-val="10" id="buff-pres">🌍 집행관 스킬 (+10%)</div>
+                <div class="chip" data-type="toggle" data-val="10" id="buff-vp">🎖️ 부집행관 (+10%)</div>
+            </div>
+        </div>
+
+        <!-- 펫 하이에나 -->
+        <div class="buff-group">
+            <label>🐺 동굴 하이에나 (건축가 조수)</label>
+            <div class="buff-options" id="buff-hyena">
+                <div class="chip" data-type="radio" data-val="5">5%</div>
+                <div class="chip" data-type="radio" data-val="7">7%</div>
+                <div class="chip" data-type="radio" data-val="9">9%</div>
+                <div class="chip" data-type="radio" data-val="12">12%</div>
+                <div class="chip" data-type="radio" data-val="15">15%</div>
+            </div>
+        </div>
+
+        <!-- 영웅 진먼 -->
+        <div class="buff-group">
+            <label>🍖 진먼 (원정 보너스)</label>
+            <div class="buff-options" id="buff-jinman">
+                <div class="chip" data-type="radio" data-val="9">9%</div>
+                <div class="chip" data-type="radio" data-val="12">12%</div>
+                <div class="chip" data-type="radio" data-val="15">15%</div>
+            </div>
+        </div>
+
+        <!-- 커스텀 -->
+        <div class="buff-group" style="margin-bottom: 0;">
+            <label>기타 버프 (연구, 섬, 연맹 보너스 등)</label>
+            <div style="display: flex; align-items: center;">
+                <span style="font-size: 0.8rem;">추가 합계:</span>
+                <input type="number" id="custom-buff" class="input-custom" value="0" min="0" oninput="calculateTotal()">
+                <span style="margin-left: 5px; font-size: 0.8rem;">%</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 건물 선택 -->
+    <div class="section-title">9불(FC9) 업그레이드 건물</div>
+    <div class="button-grid" id="fc9-group"></div>
+
+    <div class="section-title">10불(FC10) 업그레이드 건물</div>
+    <div class="button-grid" id="fc10-group"></div>
+
+    <div class="warning-box">
+        ⚠️ 모든 버프는 반드시 건물 업그레이드 버튼을 누르기 전에 활성화되어야 적용됩니다.
+    </div>
+
+    <footer>
+        &copy; 2024 WOS Fan Tool - Created by Expert Developer
+    </footer>
+</div>
+
+<script>
+    const UPGRADE_DATA = {
+        fc9: {
+            furnace: { name: "용광로", fc: 1260, rfc: 180, days: 65 },
+            infantry: { name: "방패병 병영", fc: 567, rfc: 78, days: 10 },
+            lancer: { name: "창병 병영", fc: 567, rfc: 78, days: 10 },
+            marksman: { name: "궁병 병영", fc: 567, rfc: 78, days: 10 },
+            embassy: { name: "대사관", fc: 315, rfc: 42, days: 10 },
+            command: { name: "지휘부", fc: 252, rfc: 36, days: 10 }
+        },
+        fc10: {
+            furnace: { name: "용광로", fc: 1575, rfc: 420, days: 100 },
+            infantry: { name: "방패병 병영", fc: 706, rfc: 186, days: 15 },
+            lancer: { name: "창병 병영", fc: 706, rfc: 186, days: 15 },
+            marksman: { name: "궁병 병영", fc: 706, rfc: 186, days: 15 },
+            embassy: { name: "대사관", fc: 392, rfc: 103, days: 15 },
+            command: { name: "지휘부", fc: 315, rfc: 87, days: 15 }
+        }
+    };
+
+    const state = {
+        selectedBuildings: { fc9: {}, fc10: {} },
+        buffs: {
+            toggles: { vip: 0, chief: 0, pres: 0, vp: 0 },
+            hyena: 0,
+            jinman: 0
+        }
+    };
+
+    function init() {
+        renderGroup('fc9', 'fc9-group');
+        renderGroup('fc10', 'fc10-group');
+        setupBuffListeners();
+    }
+
+    function renderGroup(level, containerId) {
+        const container = document.getElementById(containerId);
+        const buildings = UPGRADE_DATA[level];
+        for (const [key, data] of Object.entries(buildings)) {
+            const btn = document.createElement('button');
+            btn.className = 'upgrade-btn';
+            btn.innerHTML = `<span class="name">${data.name}</span><span class="info">FC ${data.fc} / RFC ${data.rfc}</span>`;
+            btn.onclick = () => {
+                if (state.selectedBuildings[level][key]) {
+                    delete state.selectedBuildings[level][key];
+                    btn.classList.remove('selected');
+                } else {
+                    state.selectedBuildings[level][key] = data;
+                    btn.classList.add('selected');
+                }
+                calculateTotal();
+            };
+            container.appendChild(btn);
+        }
+    }
+
+    function setupBuffListeners() {
+        // Toggle Buttons
+        document.querySelectorAll('.chip[data-type="toggle"]').forEach(chip => {
+            chip.onclick = () => {
+                chip.classList.toggle('active');
+                const val = parseInt(chip.dataset.val);
+                const id = chip.id.replace('buff-', '');
+                state.buffs.toggles[id] = chip.classList.contains('active') ? val : 0;
+                calculateTotal();
+            };
+        });
+
+        // Radio Groups (Hyena, Jinman)
+        const setupRadio = (containerId, stateKey) => {
+            const chips = document.querySelectorAll(`#${containerId} .chip`);
+            chips.forEach(chip => {
+                chip.onclick = () => {
+                    const isActive = chip.classList.contains('active');
+                    chips.forEach(c => c.classList.remove('active'));
+                    if (!isActive) {
+                        chip.classList.add('active');
+                        state.buffs[stateKey] = parseInt(chip.dataset.val);
+                    } else {
+                        state.buffs[stateKey] = 0;
+                    }
+                    calculateTotal();
+                };
+            });
+        };
+        setupRadio('buff-hyena', 'hyena');
+        setupRadio('buff-jinman', 'jinman');
+    }
+
+    function calculateTotal() {
+        let totalFC = 0, totalRFC = 0, baseDays = 0;
+
+        // 건액 자원/시간 합산
+        [state.selectedBuildings.fc9, state.selectedBuildings.fc10].forEach(group => {
+            for (const key in group) {
+                totalFC += group[key].fc;
+                totalRFC += group[key].rfc;
+                baseDays += group[key].days;
+            }
+        });
+
+        // 버프 합산
+        let buffSum = 0;
+        for (const key in state.buffs.toggles) buffSum += state.buffs.toggles[key];
+        buffSum += state.buffs.hyena;
+        buffSum += state.buffs.jinman;
+        buffSum += parseInt(document.getElementById('custom-buff').value || 0);
+
+        // 가속 공식 적용: 기본시간 / (1 + 버프합/100)
+        const finalDays = baseDays / (1 + (buffSum / 100));
+
+        // 업데이트
+        document.getElementById('total-fc').innerText = totalFC.toLocaleString();
+        document.getElementById('total-rfc').innerText = totalRFC.toLocaleString();
+        document.getElementById('base-days').innerText = baseDays.toFixed(1) + ' 일';
+        document.getElementById('final-days').innerText = finalDays.toFixed(1) + ' 일';
+        document.getElementById('total-buff-percent').innerText = buffSum + '%';
+    }
+
+    window.onload = init;
+</script>
+
+</body>
+</html>
